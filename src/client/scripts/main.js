@@ -6,7 +6,8 @@ const joinButton = document.getElementById("join-party");
 const partyCode = document.getElementById("party-code");
 
 
-
+// const URL = 'https://movparty.herokuapp.com/';
+const HOST = location.origin.replace(/^http/, 'ws')
 
 
 
@@ -22,11 +23,12 @@ function handleMedia() {
 createButton.addEventListener("click", () => {
   console.log("Create Party!!");
 
-  const ws = new WebSocket('ws://localhost:9091');
+  //  ws://localhost:9091
+  const ws = new WebSocket(HOST);
 
   // Connection opened
   ws.addEventListener('open', function (event) {
-    ws.send('Hello Server, Please create my party!');
+    ws.send(JSON.stringify({req:'Hello Server, Please create my party!'}));
   });
 
   ws.addEventListener('message', function (event) {

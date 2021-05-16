@@ -4,7 +4,7 @@ const WebSocketServer = require('websocket').server;
 const http = require('http');
 
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // Operation Constant.
 const CONNECT = 0;
@@ -16,13 +16,13 @@ const JOIN_PARTY = 2;
 const app = express();
 app.use(express.static(path.join(__dirname, 'src/client')))
 app.get('/', (req, res) => res.sendFile('index.html'))
-app.listen(PORT, () => console.log(`App listening at http://localhost:${PORT}`))
+// app.listen(PORT, () => console.log(`App listening at http://localhost:${PORT}`))
 
 
 
 
-const httpserver = http.createServer();
-httpserver.listen(9091, () => console.log(`http listening at http://localhost:9091`))
+const httpserver = http.createServer(app);
+httpserver.listen(PORT, () => console.log(`http listening at http://localhost:${PORT}`))
 
 
 const wsServer = new WebSocketServer({

@@ -5,9 +5,12 @@ const WebSocketServer = require('websocket').server;
 const path = require('path');
 
 const utitliy = require('./utility')
+const partiesDB = require('./partiesDB')
 
+const { v4: uuidv4 } = require('uuid');
 
 const PORT = process.env.PORT || 8080;
+
 
 // Operation Constant.
 const CONNECT = utitliy.CONNECT;
@@ -42,44 +45,39 @@ wsServer.on('request', request => {
     
     connection.on("message", message => {
         // Message From Client.
-        const msg = JSON.parse(message.utf8Data)
-        console.log(msg);
+        const req = JSON.parse(message.utf8Data)
+        console.log(req);
         
-        switch(msg.method){
+        switch(req.method){
             case CREATE_PARTY:
-                // TODO : createParty() method.
-                // createParty();
-                console.log("CREATING A PARTY !!");
-                connection.send(JSON.stringify(utitliy.CREATE_PARTY));
+                const creatingRes = createParty(req.clientId, connection);
+                console.log("Party has been created!!");
+                connection.send(JSON.stringify(creatingRes));
                 break;
             case JOIN_PARTY:
                 // TODO : joinParty() method.
                 // joinParty();
                 console.log("JOINING A PARTY !!");
-                connection.send(JSON.stringify(utitliy.JOIN_PARTY));
+                connection.send(JSON.stringify(utitliy.join));
                 break;
-            default:
-                console.log(msg);
         }
 
 
     });
 
-
-    
-
-    connection.send(JSON.stringify(utitliy.connect));
+    // Send to client that the connection is opened !
+    connection.send(JSON.stringify(utitliy.connect()));
 });
 
-// wsServer.on('connect', () => {
-//     console.log("CONNECTED!!");
-// })
-// wsServer.on('close', () => {
-//     console.log("WS CLOSED!!");
-// })
 
+const createParty = (client, connection) => {
+    const res = utitliy.create();
+    partiesDB.addParty(res.partyId, connection);
+    partiesDB.addClient(res.partyId, client);
 
-
+    partiesDB.logParties();
+    return res;
+}
 
 
 

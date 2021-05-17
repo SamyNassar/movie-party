@@ -8,17 +8,31 @@ const CREATE_PARTY = 1;
 const JOIN_PARTY = 2;
 
 
-const connect = {
-    method: CONNECT,
-    ClientId: uuidv4()
+const connect = () => {
+
+    const data = {
+        "status":"Connect",
+        "method": CONNECT,
+        "clientId": uuidv4()
+    };
+
+    return data;
 }
 
-const create = {
-    method: CREATE_PARTY,
-    partyId: uuidv4()
+
+const create = () => {
+
+    const data = {
+        status:"Create",
+        method: CREATE_PARTY,
+        partyId: uuidv4()
+    };
+
+    return data;
 }
 
 const join = {
+    status:"Join",
     method: JOIN_PARTY,
 }
 

@@ -8,7 +8,7 @@ const partyCode = document.getElementById("party-code");
 
 const HOST = location.origin.replace(/^http/, 'ws')
 
-let ClientInfo;
+let clientInfo = {};
 
 
 
@@ -20,63 +20,55 @@ function handleMedia() {
 }
 
 
-// Create Party listener.
+const ws = new WebSocket(HOST);
+
+// When connection opened.
+ws.addEventListener('open', function (event) {
+  ws.send(JSON.stringify({method:0}));
+});
+
+
+// When server send a massage
+ws.addEventListener('message', function (event) {
+  console.log('Message from server \n', event.data);
+
+  const res = JSON.parse(event.data);
+
+  switch(res.method){
+    case 0:
+      clientInfo["clientId"] = res.clientId;
+      break;
+    case 1:
+      console.log(res.method);
+      clientInfo['partyId'] = res.partyId;
+      break;
+    case 2:
+      console.log(res.method);
+      break;
+  }
+
+  console.log(clientInfo);
+});
+
+// Create Party button listener.
 createButton.addEventListener("click", () => {
-  console.log("Create Party!!");
+  console.log("Create Party!!");  
 
-  //  ws://localhost:9091
-  const ws = new WebSocket(HOST);
+  const request = {
+    method:1,
+    clientId : clientInfo
+  }
 
-  // Connection opened
-  ws.addEventListener('open', function (event) {
-    ws.send(JSON.stringify({req:'Hello Server, Please create my party!'}));
-  });
-
-  ws.addEventListener('message', function (event) {
-    console.log('Message from server \n', event.data);
-    
-    const res = JSON.parse(event.data);
-    console.log(res);
-
-    switch(res.method){
-      case 0:
-        console.log(res.method);
-        break;
-      case 1:
-        console.log(res.method);
-        break;
-      case 2:
-        console.log(res.method);
-        break;
-    }
-
-
-    
-
-  });
+  ws.send(JSON.stringify(request))
 
 })
+
+
 
 // Join Party listener.
 joinButton.addEventListener("click", () => {
   console.log("Join Party!!");
+  ws.send(JSON.stringify({method:2}))
   console.log(partyCode.value);
 
 })
-
-
-
-
-// // Connection opened
-// ws.addEventListener('open', function (event) {
-//     ws.send('Hello Server!');
-// });
-
-// // Listen for messages
-// ws.addEventListener('message', function (event) {
-//     console.log('Message from server ', event.data);
-// });
-
-// ws.onmessage = message => {
-//     console.log('Message from server ', message);
-// }

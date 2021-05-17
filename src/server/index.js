@@ -1,30 +1,30 @@
 const express = require('express');
-const path = require('path');
-const WebSocketServer = require('websocket').server;
 const http = require('http');
+const WebSocketServer = require('websocket').server;
+
+const path = require('path');
+
+const utitliy = require('./utility')
 
 
 const PORT = process.env.PORT || 8080;
 
 // Operation Constant.
-const CONNECT = 0;
-const CREATE_PARTY = 1;
-const JOIN_PARTY = 2;
+const CONNECT = utitliy.CONNECT;
+const CREATE_PARTY = utitliy.CREATE_PARTY;
+const JOIN_PARTY = utitliy.JOIN_PARTY;
 
 
 // Initialize Express app.
 const app = express();
-app.use(express.static(path.join(__dirname, 'src/client')))
+app.use(express.static(path.join(process.cwd(), 'src/client')))
 app.get('/', (req, res) => res.sendFile('index.html'))
-// app.listen(PORT, () => console.log(`App listening at http://localhost:${PORT}`))
 
-
-
-
+// Initialize http server using express.
 const httpserver = http.createServer(app);
 httpserver.listen(PORT, () => console.log(`http listening at http://localhost:${PORT}`))
 
-
+// Initialize WS server.
 const wsServer = new WebSocketServer({
     httpServer: httpserver
 });
@@ -50,13 +50,13 @@ wsServer.on('request', request => {
                 // TODO : createParty() method.
                 // createParty();
                 console.log("CREATING A PARTY !!");
-                connection.send(JSON.stringify({status: "CREATE"}));
+                connection.send(JSON.stringify(utitliy.CREATE_PARTY));
                 break;
             case JOIN_PARTY:
                 // TODO : joinParty() method.
                 // joinParty();
                 console.log("JOINING A PARTY !!");
-                connection.send(JSON.stringify({status: "JOIN"}));
+                connection.send(JSON.stringify(utitliy.JOIN_PARTY));
                 break;
             default:
                 console.log(msg);
@@ -66,12 +66,9 @@ wsServer.on('request', request => {
     });
 
 
-    const res = {
-        method: CONNECT,
-        clientId : 1512315, // TODO <guid>
-    }
+    
 
-    connection.send(JSON.stringify(res));
+    connection.send(JSON.stringify(utitliy.connect));
 });
 
 // wsServer.on('connect', () => {
@@ -82,7 +79,8 @@ wsServer.on('request', request => {
 // })
 
 
-  
+
+
 
 
 

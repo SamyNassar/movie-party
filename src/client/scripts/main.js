@@ -6,8 +6,9 @@ const joinButton = document.getElementById("join-party");
 const partyCode = document.getElementById("party-code");
 
 
-// const URL = 'https://movparty.herokuapp.com/';
 const HOST = location.origin.replace(/^http/, 'ws')
+
+let ClientInfo;
 
 
 
@@ -32,7 +33,26 @@ createButton.addEventListener("click", () => {
   });
 
   ws.addEventListener('message', function (event) {
-    console.log('Message from server ', event.data);
+    console.log('Message from server \n', event.data);
+    
+    const res = JSON.parse(event.data);
+    console.log(res);
+
+    switch(res.method){
+      case 0:
+        console.log(res.method);
+        break;
+      case 1:
+        console.log(res.method);
+        break;
+      case 2:
+        console.log(res.method);
+        break;
+    }
+
+
+    
+
   });
 
 })

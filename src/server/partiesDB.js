@@ -2,11 +2,10 @@
 //hashmap.
 let parties = {};
 
-const addParty = (id, connection) => {
+const addParty = (id, ) => {
 
     const newParty = {
         id,
-        connection,
         clients: {},
         media:{
             name:'Movie',
@@ -17,7 +16,8 @@ const addParty = (id, connection) => {
             status: 'pause',
             instant: '00:00:00',
             speed: 'normal'
-        }
+        },
+        test:0 // For testing
     }
     parties[newParty.id] = newParty;
 }

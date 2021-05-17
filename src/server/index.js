@@ -50,19 +50,16 @@ wsServer.on('request', request => {
         
         switch(req.method){
             case CREATE_PARTY:
-                const creatingRes = createParty(req.clientId, connection);
+                const creatingRes = createParty(req, connection);
                 console.log("Party has been created!!");
                 connection.send(JSON.stringify(creatingRes));
                 break;
             case JOIN_PARTY:
-                // TODO : joinParty() method.
-                // joinParty();
-                console.log("JOINING A PARTY !!");
-                connection.send(JSON.stringify(utitliy.join));
+                const joinRes = joinParty(req, connection);
+                console.log("JOINED TO PARTY !!");
+                connection.send(JSON.stringify(joinRes));
                 break;
         }
-
-
     });
 
     // Send to client that the connection is opened !
@@ -70,15 +67,32 @@ wsServer.on('request', request => {
 });
 
 
-const createParty = (client, connection) => {
-    const res = utitliy.create();
-    partiesDB.addParty(res.partyId, connection);
-    partiesDB.addClient(res.partyId, client);
+const createParty = (req, connection) => {
 
-    partiesDB.logParties();
+    const res = utitliy.create();
+    req.client['connection'] = connection;
+    
+    partiesDB.addParty(res.partyId, connection);
+    partiesDB.addClient(res.partyId, req.client);
+
+    // For testing
+    partiesDB.parties[res.partyId].test = 0;
+
+    // partiesDB.logParties();
     return res;
 }
 
+const joinParty = (req, connection) => {
 
+    const res = utitliy.join;
+
+    console.log(req)
+    req.client['connection'] = connection;
+
+    partiesDB.addClient(req.party.partyId ,req.client);
+    // partiesDB.logParties();
+    return res;
+
+}
 
 

@@ -9,6 +9,7 @@ const partyCode = document.getElementById("party-code");
 const HOST = location.origin.replace(/^http/, 'ws')
 
 let clientInfo = {};
+let partyInfo = {}
 
 
 
@@ -56,11 +57,9 @@ createButton.addEventListener("click", () => {
 
   const request = {
     method:1,
-    clientId : clientInfo
+    client : clientInfo
   }
-
   ws.send(JSON.stringify(request))
-
 })
 
 
@@ -68,7 +67,19 @@ createButton.addEventListener("click", () => {
 // Join Party listener.
 joinButton.addEventListener("click", () => {
   console.log("Join Party!!");
-  ws.send(JSON.stringify({method:2}))
-  console.log(partyCode.value);
 
+  const partyId = partyCode.value;
+
+  partyInfo['partyId'] = partyId;
+
+
+  const req = {
+    method:2, // Join party
+    client: clientInfo,
+    party : partyInfo
+  }
+
+  console.log(req);
+
+  ws.send(JSON.stringify(req))
 })

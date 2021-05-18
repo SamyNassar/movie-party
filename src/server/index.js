@@ -56,7 +56,7 @@ wsServer.on('request', request => {
                 const joinRes = joinParty(req, connection);
                 console.log("JOINED TO PARTY !!");
 
-                notifyClients();
+                // notifyClients();
 
                 connection.send(JSON.stringify(joinRes));
                 break;
@@ -77,10 +77,6 @@ const createParty = (req, connection) => {
     partiesDB.addParty(res.partyId, connection);
     partiesDB.addClient(res.partyId, req.client);
 
-    // For testing
-    partiesDB.parties[res.partyId].test = 0;
-
-    // partiesDB.logParties();
     return res;
 }
 
@@ -89,11 +85,16 @@ const joinParty = (req, connection) => {
 
     const res = utitliy.joinResponse;
 
-    console.log(req)
-    req.client['connection'] = connection;
+    if(!utitliy.validatePartyCode(req.party.partyId)){
+        res.status = utitliy.INVALID_CODE;
+        res.message = "Invalid Code";
 
+        return res;
+    }
+
+    req.client['connection'] = connection;
     partiesDB.addClient(req.party.partyId ,req.client);
-    // partiesDB.logParties();
+
     return res;
 
 }

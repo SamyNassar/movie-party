@@ -1,37 +1,34 @@
 const { v4: uuidv4 } = require('uuid');
 
 
-
 // Operation Constant.
-const CONNECT = 0;
+const CONNECT_SERVER = 0;
 const CREATE_PARTY = 1;
 const JOIN_PARTY = 2;
 
-
-const connect = () => {
-
+// Response send to clients who want to OPEN a CONNECTION with server.
+const connectServer = () => {
     const data = {
-        "status":"Connect",
-        "method": CONNECT,
-        "clientId": uuidv4()
+        status:"Connect",
+        method: CONNECT_SERVER,
+        clientId: uuidv4()
     };
 
     return data;
 }
 
-
-const create = () => {
-
+// Response send to clients who want to CREATE a party.
+const createParty = () => {
     const data = {
         status:"Create",
         method: CREATE_PARTY,
         partyId: uuidv4()
     };
-
     return data;
 }
 
-const join = {
+// Response send to clients who want to JOIN a party.
+const joinResponse = {
     status:"Join",
     method: JOIN_PARTY,
 }
@@ -39,12 +36,12 @@ const join = {
 
 
 module.exports = {
-    CONNECT,
+    CONNECT: CONNECT_SERVER,
     CREATE_PARTY,
     JOIN_PARTY,
-    connect,
-    create,
-    join,
+    connectServer,
+    createParty,
+    joinResponse,
 }
 
 

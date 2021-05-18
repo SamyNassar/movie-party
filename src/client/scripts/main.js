@@ -1,4 +1,3 @@
-
 const inputMedia = document.getElementById("media-path");
 const mediaPlayer = document.getElementById("myVideo");
 const createButton = document.getElementById("create-party");
@@ -7,6 +6,7 @@ const partyCode = document.getElementById("party-code");
 
 
 const HOST = location.origin.replace(/^http/, 'ws')
+
 
 let clientInfo = {};
 let partyInfo = {}
@@ -31,7 +31,8 @@ ws.addEventListener('open', function (event) {
 
 // When server send a massage
 ws.addEventListener('message', function (event) {
-  console.log('Message from server \n', event.data);
+  console.log('Message from server');
+  console.log(event.data);
 
   const res = JSON.parse(event.data);
 
@@ -39,16 +40,23 @@ ws.addEventListener('message', function (event) {
     case 0:
       clientInfo["clientId"] = res.clientId;
       break;
-    case 1:
+    case 1: // Create Party
       console.log(res.method);
-      clientInfo['partyId'] = res.partyId;
+      partyInfo['partyId'] = res.partyId;
       break;
-    case 2:
+    case 2: // Join
       console.log(res.method);
+      // partyInfo['partyId'] = res.party
+      break;
+    case 4:
+      console.log(res)
+    case 5:
+      console.log("Updated!");
       break;
   }
 
   console.log(clientInfo);
+  console.log(partyInfo);
 });
 
 // Create Party button listener.

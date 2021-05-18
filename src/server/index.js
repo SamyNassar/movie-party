@@ -8,6 +8,8 @@ const utitliy = require('./utility')
 const partiesDB = require('./partiesDB')
 
 const { v4: uuidv4 } = require('uuid');
+const CircularJSON = require('circular-json');
+
 
 const PORT = process.env.PORT || 8080;
 
@@ -38,7 +40,6 @@ const wsServer = new WebSocketServer({
 wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
     console.log("Request Accepted !!")
-    // console.log(connection)
 
     connection.on("open", () => console.log("OPEND!!"));
     connection.on("close", () => console.log("CONNECTION CLOSED!!"));
@@ -49,21 +50,27 @@ wsServer.on('request', request => {
         console.log(req);
         
         switch(req.method){
+
             case CREATE_PARTY:
                 const creatingRes = createParty(req, connection);
                 console.log("Party has been created!!");
                 connection.send(JSON.stringify(creatingRes));
                 break;
+
             case JOIN_PARTY:
                 const joinRes = joinParty(req, connection);
                 console.log("JOINED TO PARTY !!");
+
+                notifyClients();
+
                 connection.send(JSON.stringify(joinRes));
                 break;
+            case 4: // Ask to change value
+                partiesDB.parties[req.party.partyId].test = req.test;
         }
     });
-
     // Send to client that the connection is opened !
-    connection.send(JSON.stringify(utitliy.connect()));
+    connection.send(JSON.stringify(utitliy.connectServer()));
 });
 
 
@@ -96,3 +103,26 @@ const joinParty = (req, connection) => {
 }
 
 
+
+
+const notifyClients = () => {
+
+    for(const party in partiesDB.parties){
+        for(const client in partiesDB.parties[party].clients){
+            console.log(partiesDB.parties[party])
+
+            const updatedParty = JSON.parse(CircularJSON.stringify(partiesDB.parties[party]))
+            
+            const res = {
+                method : 4,
+                clients: updatedParty.clients,
+                mediaPlayer: updatedParty.mediaPlayer,
+                test: updatedParty.test
+            }
+            partiesDB.parties[party].clients[client].connection.send(JSON.stringify(res))
+        }
+    }
+    
+    setTimeout(notifyClients, 500)
+
+}

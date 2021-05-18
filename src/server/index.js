@@ -7,17 +7,14 @@ const path = require('path');
 const utitliy = require('./utility')
 const partiesDB = require('./partiesDB')
 
-const { v4: uuidv4 } = require('uuid');
-const CircularJSON = require('circular-json');
-
+// const CircularJSON = require('circular-json');
 
 const PORT = process.env.PORT || 8080;
 
-
 // Operation Constant.
-const CONNECT = utitliy.CONNECT;
 const CREATE_PARTY = utitliy.CREATE_PARTY;
 const JOIN_PARTY = utitliy.JOIN_PARTY;
+const UPDATE_DATA = utitliy.UPDATE_DATA;
 
 
 // Initialize Express app.
@@ -35,9 +32,8 @@ const wsServer = new WebSocketServer({
 });
 
 
-
-
 wsServer.on('request', request => {
+    //TODO: Handle clients requests (Don't allow to any one to connect).
     const connection = request.accept(null, request.origin);
     console.log("Request Accepted !!")
 
@@ -50,7 +46,6 @@ wsServer.on('request', request => {
         console.log(req);
         
         switch(req.method){
-
             case CREATE_PARTY:
                 const creatingRes = createParty(req, connection);
                 console.log("Party has been created!!");
@@ -65,7 +60,7 @@ wsServer.on('request', request => {
 
                 connection.send(JSON.stringify(joinRes));
                 break;
-            case 4: // Ask to change value
+            case UPDATE_DATA: // Ask to change value
                 partiesDB.parties[req.party.partyId].test = req.test;
         }
     });
@@ -76,7 +71,7 @@ wsServer.on('request', request => {
 
 const createParty = (req, connection) => {
 
-    const res = utitliy.create();
+    const res = utitliy.creatationResponse();
     req.client['connection'] = connection;
     
     partiesDB.addParty(res.partyId, connection);
@@ -89,9 +84,10 @@ const createParty = (req, connection) => {
     return res;
 }
 
+
 const joinParty = (req, connection) => {
 
-    const res = utitliy.join;
+    const res = utitliy.joinResponse;
 
     console.log(req)
     req.client['connection'] = connection;
@@ -103,26 +99,22 @@ const joinParty = (req, connection) => {
 }
 
 
-
-
 const notifyClients = () => {
 
     for(const party in partiesDB.parties){
         for(const client in partiesDB.parties[party].clients){
             console.log(partiesDB.parties[party])
 
-            const updatedParty = JSON.parse(CircularJSON.stringify(partiesDB.parties[party]))
+            // const updatedParty = JSON.parse(CircularJSON.stringify(partiesDB.parties[party]))
+            const updatedParty = partiesDB.parties[party]
             
             const res = {
-                method : 4,
-                clients: updatedParty.clients,
+                method : UPDATE_DATA,
+                // clients: updatedParty.clients,
                 mediaPlayer: updatedParty.mediaPlayer,
-                test: updatedParty.test
             }
             partiesDB.parties[party].clients[client].connection.send(JSON.stringify(res))
         }
     }
-    
     setTimeout(notifyClients, 500)
-
 }

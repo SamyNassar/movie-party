@@ -1,3 +1,5 @@
+import * as utl from "./utility.js"
+
 const inputMedia = document.getElementById("media-path");
 const mediaPlayer = document.getElementById("myVideo");
 const createButton = document.getElementById("create-party");
@@ -12,7 +14,7 @@ let clientInfo = {};
 let partyInfo = {}
 
 
-
+// Listener for uploaded media.
 inputMedia.addEventListener("change", handleMedia, false);
 function handleMedia() {
   const media = this.files[0];
@@ -24,70 +26,69 @@ function handleMedia() {
 const ws = new WebSocket(HOST);
 
 // When connection opened.
-ws.addEventListener('open', function (event) {
-  ws.send(JSON.stringify({method:0}));
-});
+ws.onopen = (event) => {
+  const request = utl.connectServer
+  ws.send(JSON.stringify(request));
+};
 
 
 // When server send a massage
-ws.addEventListener('message', function (event) {
+ws.onmessage = (event) => {
   console.log('Message from server');
   console.log(event.data);
 
   const res = JSON.parse(event.data);
 
   switch(res.method){
-    case 0:
+
+    case utl.CONNECT_SERVER:
       clientInfo["clientId"] = res.clientId;
       break;
-    case 1: // Create Party
+
+    case utl.CREATE_PARTY:
       console.log(res.method);
       partyInfo['partyId'] = res.partyId;
       break;
-    case 2: // Join
+
+    case utl.JOIN_PARTY:
       console.log(res.method);
-      // partyInfo['partyId'] = res.party
       break;
-    case 4:
-      console.log(res)
-    case 5:
+
+    case utl.UPDATE_DATA:
+      console.log(res);
       console.log("Updated!");
       break;
   }
 
   console.log(clientInfo);
   console.log(partyInfo);
-});
+};
 
 // Create Party button listener.
 createButton.addEventListener("click", () => {
-  console.log("Create Party!!");  
-
-  const request = {
-    method:1,
-    client : clientInfo
-  }
+  const request = utl.creatationRequest;
+  request.client = clientInfo;
   ws.send(JSON.stringify(request))
 })
 
 
-
 // Join Party listener.
 joinButton.addEventListener("click", () => {
-  console.log("Join Party!!");
 
   const partyId = partyCode.value;
-
+  //TODO validate the user input that return true or false.
+  // utl.validatePartyCode(partyId);
+  
   partyInfo['partyId'] = partyId;
 
+  const request = utl.joinRequest;
+  request.client = clientInfo;
+  request.party = partyInfo;
 
-  const req = {
-    method:2, // Join party
-    client: clientInfo,
-    party : partyInfo
-  }
-
-  console.log(req);
-
-  ws.send(JSON.stringify(req))
+  ws.send(JSON.stringify(request))
 })
+
+
+ws.onclose = (event) => {
+  console.log("WebSocket is closed now.");
+};

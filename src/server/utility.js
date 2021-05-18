@@ -5,6 +5,8 @@ const { v4: uuidv4 } = require('uuid');
 const CONNECT_SERVER = 0;
 const CREATE_PARTY = 1;
 const JOIN_PARTY = 2;
+const UPDATE_DATA = 3;
+
 
 // Response send to clients who want to OPEN a CONNECTION with server.
 const connectServer = () => {
@@ -18,7 +20,7 @@ const connectServer = () => {
 }
 
 // Response send to clients who want to CREATE a party.
-const createParty = () => {
+const creatationResponse = () => {
     const data = {
         status:"Create",
         method: CREATE_PARTY,
@@ -36,11 +38,12 @@ const joinResponse = {
 
 
 module.exports = {
-    CONNECT: CONNECT_SERVER,
+    CONNECT_SERVER,
     CREATE_PARTY,
     JOIN_PARTY,
+    UPDATE_DATA,
     connectServer,
-    createParty,
+    creatationResponse,
     joinResponse,
 }
 

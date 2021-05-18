@@ -5,6 +5,7 @@ const CONNECT_SERVER = 0;
 const CREATE_PARTY = 1;
 const JOIN_PARTY = 2;
 const UPDATE_DATA = 3;
+const INVALID_CODE = -1;
 
 
 // Request to OPEN a CONNECTION with the server.
@@ -32,6 +33,7 @@ export{
     CREATE_PARTY,
     JOIN_PARTY,
     UPDATE_DATA,
+    INVALID_CODE,
     connectServer,
     creatationRequest,
     joinRequest

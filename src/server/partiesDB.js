@@ -2,28 +2,27 @@
 //hashmap.
 let parties = {};
 
-const addParty = (id, ) => {
+const addParty = (id) => {
 
     const newParty = {
         id,
         clients: {},
-        media:{
-            name:'Movie',
-            size:'1 Gb',
-            duration: '2 hours'
-        },
-        mediaPlayer:{
+        media:{},
+        mediaPlayer: {
             status: 'pause',
-            instant: '00:00:00',
-            speed: 'normal'
+            currentTime : 0,
+            playbackRate: 1
         },
-        test:0 // For testing
     }
     parties[newParty.id] = newParty;
 }
 
 const addClient = (partyId, client) => {
     parties[partyId].clients[client.clientId] = client;
+}
+
+const addMedia = (partyId, media) => {
+    parties[partyId].media = media;
 }
 
 const logParties = () => {
@@ -38,5 +37,6 @@ module.exports = {
     parties,
     addParty,
     addClient,
+    addMedia,
     logParties
 }

@@ -48,20 +48,22 @@ wsServer.on('request', request => {
         switch(req.method){
             case CREATE_PARTY:
                 const creatingRes = createParty(req, connection);
-                console.log("Party has been created!!");
                 connection.send(JSON.stringify(creatingRes));
                 break;
 
             case JOIN_PARTY:
                 const joinRes = joinParty(req, connection);
-                console.log("JOINED TO PARTY !!");
 
                 // notifyClients();
 
                 connection.send(JSON.stringify(joinRes));
                 break;
+
             case UPDATE_DATA: // Ask to change value
-                partiesDB.parties[req.party.partyId].test = req.test;
+                //TODO validate user request.
+                partiesDB.parties[req.partyId].mediaPlayer = req.mediaPlayer
+                console.log(partiesDB.parties[req.partyId].mediaPlayer);
+                break;
         }
     });
     // Send to client that the connection is opened !
@@ -72,10 +74,27 @@ wsServer.on('request', request => {
 const createParty = (req, connection) => {
 
     const res = utitliy.creatationResponse();
-    req.client['connection'] = connection;
+
+    if(!utitliy.validateMediaInput(req.client.media, utitliy.CREATE_PARTY, res.partyId)){
+        return {
+            method: utitliy.CREATE_PARTY,
+            status: utitliy.INVALID_MEDIA,
+            message: "Invalid Media"
+        }
+    }
+
     
-    partiesDB.addParty(res.partyId, connection);
-    partiesDB.addClient(res.partyId, req.client);
+    req.client['connection'] = connection;
+
+
+    const client = {
+        clientId: req.client.clientId,
+        connection: connection
+    }
+    
+    partiesDB.addParty(res.partyId);
+    partiesDB.addClient(res.partyId, client);
+    partiesDB.addMedia(res.partyId, req.client.media);
 
     return res;
 }
@@ -92,8 +111,18 @@ const joinParty = (req, connection) => {
         return res;
     }
 
+    if(!utitliy.validateMediaInput(req.client.media, utitliy.JOIN_PARTY, req.party.partyId)){
+        res.status = utitliy.INVALID_MEDIA;
+        res.message = "Invalid Media";
+
+        return res;
+    }
+    
+
     req.client['connection'] = connection;
     partiesDB.addClient(req.party.partyId ,req.client);
+
+    notifyClients();
 
     return res;
 

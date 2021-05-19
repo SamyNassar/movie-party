@@ -1,36 +1,27 @@
-import * as utl from "./utility.js"
+import * as utl from "./utility.js";
 
-const inputMedia = document.getElementById("media-path");
-const mediaPlayer = document.getElementById("myVideo");
 const createButton = document.getElementById("create-party");
 const joinButton = document.getElementById("join-party");
 const codeInput = document.getElementById("code");
 const partyCode = document.getElementById("party-code");
-
+const inputMedia = document.getElementById("media-path");
+const mediaPlayer = document.getElementById("myVideo");
 
 const HOST = location.origin.replace(/^http/, 'ws')
 
 
 let clientInfo = {
-  party:{}
+  party: {},
+  media: null
 };
-// let partyInfo = {}
 
-
-// Listener for uploaded media.
-inputMedia.addEventListener("change", handleMedia, false);
-function handleMedia() {
-  const media = this.files[0];
-  const mediaURL = window.URL.createObjectURL(media);
-  mediaPlayer.src = mediaURL;
-}
 
 // TODO: Secure Websocket connection.
 const ws = new WebSocket(HOST);
 
 // When connection opened.
 ws.onopen = (event) => {
-  const request = utl.connectServer
+  const request = utl.connectServer;
   ws.send(JSON.stringify(request));
 };
 
@@ -49,32 +40,66 @@ ws.onmessage = (event) => {
       break;
 
     case utl.CREATE_PARTY:
-      clientInfo.party['partyId'] = res.partyId;
-      displayCode(res.partyId)
+      if(res.status == utl.CREATE_PARTY){
+        clientInfo.party['partyId'] = res.partyId;
+        displayCode(res.partyId);
+      } else if (res.status == utl.INVALID_MEDIA){
+        alert(res.message);
+      }
+      
       break;
 
     case utl.JOIN_PARTY:
       if(res.status == utl.JOIN_PARTY){
         console.log("Joined");
       } else if (res.status == utl.INVALID_CODE){
-        alert("Invalid Code!!")
+        alert(res.message);
       }
       break;
 
     case utl.UPDATE_DATA:
       console.log("Updated!");
+      const updatedMediaPlayer = res.mediaPlayer;
+      if(res.status == 'play') mediaPlayer.play()
+      if(res.status == 'pause') mediaPlayer.pause()
+      if(res.status == 'seeking'){
+        mediaPlayer.currentTime = updatedMediaPlayer.currentTime;
+        mediaPlayer.playbackRate = updatedMediaPlayer.playbackRate;
+      }
+      
       break;
   }
 
   console.log(clientInfo);
-  // console.log(partyInfo);
 };
+
+// Listener for uploaded media.
+inputMedia.addEventListener("change", handleMedia, false);
+function handleMedia() {
+  const media = this.files[0];
+  const mediaURL = window.URL.createObjectURL(media);
+  mediaPlayer.src = mediaURL;
+
+  mediaPlayer.onloadedmetadata = () => {
+    clientInfo.media = {
+      name: media.name,
+      size: media.size,
+      type: media.type,
+      duration: mediaPlayer.duration
+    }
+
+    console.log(clientInfo);
+  }
+  
+
+}
 
 // Create Party button listener.
 createButton.addEventListener("click", () => {
-  const request = utl.creatationRequest;
-  request.client = clientInfo;
-  ws.send(JSON.stringify(request))
+  const req = utl.creatationRequest;
+  console.log(clientInfo);
+  req.client = clientInfo;
+  ws.send(JSON.stringify(req));
 })
 
 
@@ -87,11 +112,11 @@ joinButton.addEventListener("click", () => {
   
   clientInfo.party['partyId'] = partyId;
 
-  const request = utl.joinRequest;
-  request.client = clientInfo;
-  request.party = clientInfo.party;
+  const req = utl.joinRequest;
+  req.client = clientInfo;
+  req.party = clientInfo.party;
 
-  ws.send(JSON.stringify(request))
+  ws.send(JSON.stringify(req));
 })
 
 
@@ -100,5 +125,44 @@ ws.onclose = (event) => {
 };
 
 const displayCode = (code) => {
-  partyCode.innerHTML = `${code}`;                   // Insert text
+  partyCode.innerHTML = `${code}`;
 }
+
+mediaPlayer.addEventListener('play', () =>{
+  console.log('play');
+
+  const req = utl.updateMediaPlayer;
+  req.mediaPlayer.status = 'play';
+  req.clientId = clientInfo.clientId;
+  req.partyId = clientInfo.party.partyId;
+  req.mediaPlayer.currentTime = mediaPlayer.currentTime;
+  req.mediaPlayer.playbackRate = mediaPlayer.playbackRate;
+
+  console.log(req);
+  ws.send(JSON.stringify(req)); 
+})
+mediaPlayer.addEventListener('pause', () =>{
+  console.log('pause');
+  const req = utl.updateMediaPlayer;
+  req.mediaPlayer.status = 'pause';
+  req.clientId = clientInfo.clientId;
+  req.partyId = clientInfo.party.partyId;
+  req.mediaPlayer.currentTime = mediaPlayer.currentTime;
+  req.mediaPlayer.playbackRate = mediaPlayer.playbackRate;
+  
+  console.log(req);
+  ws.send(JSON.stringify(req)); 
+})
+mediaPlayer.addEventListener('seeking', () =>{
+  console.log('seeking');
+  
+  const req = utl.updateMediaPlayer;
+  req.mediaPlayer.status = 'seeking';
+  req.clientId = clientInfo.clientId;
+  req.partyId = clientInfo.party.partyId;
+  req.mediaPlayer.currentTime = mediaPlayer.currentTime;
+  req.mediaPlayer.playbackRate = mediaPlayer.playbackRate;
+  
+  console.log(req);
+  ws.send(JSON.stringify(req)); 
+})

@@ -6,6 +6,7 @@ const CREATE_PARTY = 1;
 const JOIN_PARTY = 2;
 const UPDATE_DATA = 3;
 const INVALID_CODE = -1;
+const INVALID_MEDIA = -1
 
 
 // Request to OPEN a CONNECTION with the server.
@@ -26,6 +27,18 @@ const joinRequest = {
     party : null
 };
 
+const updateMediaPlayer = {
+    status:"Update Media Player status",
+    method: UPDATE_DATA,
+    clientId: null,
+    partyId : null,
+    mediaPlayer:{
+      status: null,
+      currentTime : null,
+      playbackRate: null
+    }
+}
+
 
 
 export{
@@ -34,7 +47,9 @@ export{
     JOIN_PARTY,
     UPDATE_DATA,
     INVALID_CODE,
+    INVALID_MEDIA,
     connectServer,
     creatationRequest,
-    joinRequest
+    joinRequest,
+    updateMediaPlayer
 }

@@ -8,6 +8,7 @@ const CREATE_PARTY = 1;
 const JOIN_PARTY = 2;
 const UPDATE_DATA = 3;
 const INVALID_CODE = -1;
+const INVALID_MEDIA = -1;
 
 
 // Response send to clients who want to OPEN a CONNECTION with server.
@@ -49,6 +50,21 @@ const validatePartyCode = (partyCode) => {
     return false
 }
 
+// Validate user media input.
+const validateMediaInput = (media, clientMethod, partyId='') => {
+
+
+    if(media){
+        if(clientMethod == CREATE_PARTY){
+            return true
+        } else if (clientMethod == JOIN_PARTY){
+            if(parties[partyId].media.name == media.name){
+                return true
+            }
+        }
+    }
+    return false;
+}
 
 
 module.exports = {
@@ -57,10 +73,12 @@ module.exports = {
     JOIN_PARTY,
     UPDATE_DATA,
     INVALID_CODE,
+    INVALID_MEDIA,
     connectServer,
     creatationResponse,
     joinResponse,
-    validatePartyCode
+    validatePartyCode,
+    validateMediaInput
 }
 
 

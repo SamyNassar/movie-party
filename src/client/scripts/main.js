@@ -10,10 +10,7 @@ const mediaPlayer = document.getElementById("myVideo");
 const HOST = location.origin.replace(/^http/, 'ws')
 
 
-let clientInfo = {
-  party: {},
-  media: null
-};
+let clientInfo = null;
 
 
 // TODO: Secure Websocket connection.
@@ -21,56 +18,49 @@ const ws = new WebSocket(HOST);
 
 // When connection opened.
 ws.onopen = (event) => {
-  const request = utl.connectServer;
+  const request = utl.serverConnectionRequest;
   ws.send(JSON.stringify(request));
 };
 
 
-// When server send a massage
+// When server send a massage.
 ws.onmessage = (event) => {
-  console.log('Message from server');
-  
   const res = JSON.parse(event.data);
-  console.log(res);
+  console.log("Message from Server",res);
 
-  switch(res.method){
+  switch(res.methodCode){
 
     case utl.CONNECT_SERVER:
-      clientInfo["clientId"] = res.clientId;
+      clientInfo = res.clientInfo;
       break;
-
     case utl.CREATE_PARTY:
-      if(res.status == utl.CREATE_PARTY){
-        clientInfo.party['partyId'] = res.partyId;
+      if(res.status == utl.CREATION_PASSED){
+        clientInfo.party.id = res.partyId;
         displayCode(res.partyId);
-      } else if (res.status == utl.INVALID_MEDIA){
-        alert(res.message);
+      } else if (res.status == utl.CREATION_FAILED){
+        alert(res.errorMessage);
       }
       
       break;
-
     case utl.JOIN_PARTY:
-      if(res.status == utl.JOIN_PARTY){
+      if(res.status == utl.JOIN_PASSED){
         console.log("Joined");
-      } else if (res.status == utl.INVALID_CODE){
-        alert(res.message);
+      } else if (res.status == utl.JOIN_FAILED){
+        alert(res.errorMessage);
       }
       break;
+    case utl.UPDATE_STATE:
+      console.log("State is Updated.");
 
-    case utl.UPDATE_DATA:
-      console.log("Updated!");
-      const updatedMediaPlayer = res.mediaPlayer;
-      if(res.status == 'play') mediaPlayer.play()
-      if(res.status == 'pause') mediaPlayer.pause()
-      if(res.status == 'seeking'){
-        mediaPlayer.currentTime = updatedMediaPlayer.currentTime;
-        mediaPlayer.playbackRate = updatedMediaPlayer.playbackRate;
-      }
+      updateClientState(res.mediaPlayer.status, res.mediaPlayer)
       
+      updateMediaPlayerState(res.mediaPlayer)
+      console.log("Client Media Player: ", clientInfo.mediaPlayer)
       break;
+  
   }
 
-  console.log(clientInfo);
+  // console.log("Client info :", clientInfo);
 };
 
 // Listener for uploaded media.
@@ -88,7 +78,7 @@ function handleMedia() {
       duration: mediaPlayer.duration
     }
 
-    console.log(clientInfo);
+    console.log("Client info :", clientInfo);
   }
   
 
@@ -97,8 +87,12 @@ function handleMedia() {
 // Create Party button listener.
 createButton.addEventListener("click", () => {
   const req = utl.creatationRequest;
-  console.log(clientInfo);
-  req.client = clientInfo;
+  // clientInfo.media.name = 'For Testing!!'; //TODO: remove that after finishing
+  req.data = {
+    userId: clientInfo.user.id,
+    media: clientInfo.media
+  };
+  console.log("Request to server", req);
   ws.send(JSON.stringify(req));
 })
 
@@ -110,11 +104,16 @@ joinButton.addEventListener("click", () => {
   //TODO validate the user input that return true or false.
   // utl.validatePartyCode(partyId);
   
-  clientInfo.party['partyId'] = partyId;
+  clientInfo.party.id = partyId;
 
   const req = utl.joinRequest;
-  req.client = clientInfo;
-  req.party = clientInfo.party;
+  // clientInfo.media.name = 'For Testing!!'; //TODO: remove that after finishing
+  req.data = {
+    userId: clientInfo.user.id,
+    partyId: clientInfo.party.id,
+    media: clientInfo.media
+  };
+  console.log("Request to server", req);
 
   ws.send(JSON.stringify(req));
 })
@@ -122,47 +121,68 @@ joinButton.addEventListener("click", () => {
 
 ws.onclose = (event) => {
   console.log("WebSocket is closed now.");
+  //TODO: Remove this client from party.
 };
 
 const displayCode = (code) => {
   partyCode.innerHTML = `${code}`;
 }
 
-mediaPlayer.addEventListener('play', () =>{
+mediaPlayer.onplay = () => {
   console.log('play');
-
-  const req = utl.updateMediaPlayer;
-  req.mediaPlayer.status = 'play';
-  req.clientId = clientInfo.clientId;
-  req.partyId = clientInfo.party.partyId;
-  req.mediaPlayer.currentTime = mediaPlayer.currentTime;
-  req.mediaPlayer.playbackRate = mediaPlayer.playbackRate;
-
-  console.log(req);
-  ws.send(JSON.stringify(req)); 
-})
-mediaPlayer.addEventListener('pause', () =>{
+  // clientInfo.mediaPlayer.status = 'play';
+  updateClientState('play', mediaPlayer);
+  notifyServer();
+}
+mediaPlayer.onpause = () => {
   console.log('pause');
-  const req = utl.updateMediaPlayer;
-  req.mediaPlayer.status = 'pause';
-  req.clientId = clientInfo.clientId;
-  req.partyId = clientInfo.party.partyId;
-  req.mediaPlayer.currentTime = mediaPlayer.currentTime;
-  req.mediaPlayer.playbackRate = mediaPlayer.playbackRate;
-  
-  console.log(req);
-  ws.send(JSON.stringify(req)); 
-})
-mediaPlayer.addEventListener('seeking', () =>{
-  console.log('seeking');
-  
-  const req = utl.updateMediaPlayer;
-  req.mediaPlayer.status = 'seeking';
-  req.clientId = clientInfo.clientId;
-  req.partyId = clientInfo.party.partyId;
-  req.mediaPlayer.currentTime = mediaPlayer.currentTime;
-  req.mediaPlayer.playbackRate = mediaPlayer.playbackRate;
-  
-  console.log(req);
-  ws.send(JSON.stringify(req)); 
-})
+  // clientInfo.mediaPlayer.status = 'pause';
+  updateClientState('pause', mediaPlayer);
+  notifyServer();
+}
+
+
+mediaPlayer.onseeked = () => {
+  console.log('seeked');
+  updateClientState('paues', mediaPlayer);
+  notifyServer();
+}
+
+
+const notifyServer = () => {
+  if(clientInfo.party.id != null){
+
+    const stateRequest = utl.updateStateRequest;
+
+
+    stateRequest.data.userId = clientInfo.user.id;
+    stateRequest.data.partyId = clientInfo.party.id;
+    stateRequest.data.mediaPlayer = clientInfo.mediaPlayer;
+
+
+    console.log("State Request : ", stateRequest)
+
+    ws.send(JSON.stringify(stateRequest)); 
+  }
+
+}
+
+const updateClientState = (event, mediaPlayer) => {
+
+  clientInfo.mediaPlayer.status = event;
+  clientInfo.mediaPlayer.currentTime = mediaPlayer.currentTime;
+  clientInfo.mediaPlayer.playbackRate = mediaPlayer.playbackRate;
+
+}
+
+const updateMediaPlayerState = (updatedMediaPlayer) => {
+  mediaPlayer.playbackRate = updatedMediaPlayer.playbackRate;
+
+  if(Math.abs(updatedMediaPlayer.currentTime - mediaPlayer.currentTime) > 0.5){
+    mediaPlayer.currentTime = updatedMediaPlayer.currentTime;
+  }
+
+  if(clientInfo.mediaPlayer.status == 'play') mediaPlayer.play();
+  if(clientInfo.mediaPlayer.status == 'pause') mediaPlayer.pause();
+
+}

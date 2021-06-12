@@ -4,7 +4,7 @@
   "description": "",
   "main": "./src/server/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "node ./src/server/index.js",
     "live": "nodemon ./src/server/index.js localhost 8080"
   },
@@ -17,6 +17,7 @@
     "websocket": "^1.0.34"
   },
   "devDependencies": {
+    "jest": "^26.6.3",
     "nodemon": "^2.0.7"
   }
 }

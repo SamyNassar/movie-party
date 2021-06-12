@@ -4,17 +4,18 @@ const WebSocketServer = require('websocket').server;
 
 const path = require('path');
 
-const utitliy = require('./utility')
-const partiesDB = require('./partiesDB')
+const utl = require('./utilities/utility');
+const connectionUtl = require('./utilities/connect-server-utl');
+const {CREATE_PARTY} = require('./utilities/create-party-utl');
+const {JOIN_PARTY, JOIN_PASSED} = require('./utilities/join-party-utl');
+const {UPDATE_STATE} = require('./utilities/update-state-utl');
+
+const {createParty, joinParty, updateMediaPlayerState} = require('./operations');
+const {parties} = require('./partiesDB')
 
 // const CircularJSON = require('circular-json');
 
 const PORT = process.env.PORT || 8080;
-
-// Operation Constant.
-const CREATE_PARTY = utitliy.CREATE_PARTY;
-const JOIN_PARTY = utitliy.JOIN_PARTY;
-const UPDATE_DATA = utitliy.UPDATE_DATA;
 
 
 // Initialize Express app.
@@ -35,7 +36,6 @@ const wsServer = new WebSocketServer({
 wsServer.on('request', request => {
     //TODO: Handle clients requests (Don't allow to any one to connect).
     const connection = request.accept(null, request.origin);
-    console.log("Request Accepted !!")
 
     connection.on("open", () => console.log("OPEND!!"));
     connection.on("close", () => console.log("CONNECTION CLOSED!!"));
@@ -43,108 +43,80 @@ wsServer.on('request', request => {
     connection.on("message", message => {
         // Message From Client.
         const req = JSON.parse(message.utf8Data)
+        console.log("Request From Client !!")
         console.log(req);
-        
-        switch(req.method){
-            case CREATE_PARTY:
-                const creatingRes = createParty(req, connection);
-                connection.send(JSON.stringify(creatingRes));
-                break;
 
-            case JOIN_PARTY:
-                const joinRes = joinParty(req, connection);
+        let partyId, userId, mediaPlayer;
 
-                // notifyClients();
+        try{
+            switch(req.methodCode){
+                case CREATE_PARTY:
+                    const creatingRes = createParty(req.data, connection);
+                    console.log(creatingRes);
+                    connection.send(JSON.stringify(creatingRes));
+                    break;
+    
+                case JOIN_PARTY:
+                    partyId = req.data.partyId;
+                    const joinRes = joinParty(req.data, connection);
+    
+                    if(joinRes.status == JOIN_PASSED && Object.keys(parties[partyId].users).length > 1){
+                        notifyUsers(partyId);
+                    }
+                    connection.send(JSON.stringify(joinRes));
+                    break;
+    
+                case UPDATE_STATE: // Ask to change value
+                    //TODO validate user request.
 
-                connection.send(JSON.stringify(joinRes));
-                break;
-
-            case UPDATE_DATA: // Ask to change value
-                //TODO validate user request.
-                partiesDB.parties[req.partyId].mediaPlayer = req.mediaPlayer
-                console.log(partiesDB.parties[req.partyId].mediaPlayer);
-                break;
+                    partyId = req.data.partyId;
+                    userId = req.data.userId;
+                    mediaPlayer = req.data.mediaPlayer;
+                    if(utl.checkUserExisting(partyId, userId)){
+                        try{
+                            updateMediaPlayerState(partyId, mediaPlayer);
+                            // Check if there is many participants in the party to notify.
+                            if(Object.keys(parties[partyId].users).length > 1){
+                                notifyUsers(partyId);
+                            }
+                            break;
+                        } catch(e){
+                            console.log("ERROR", e)
+                        }  
+                    }  
+            }
+        } catch(e){
+            console.log(e)
+            connection.send(JSON.stringify(e));
         }
+        
     });
     // Send to client that the connection is opened !
-    connection.send(JSON.stringify(utitliy.connectServer()));
+    connection.send(JSON.stringify(connectionUtl.passedServerConnection()));
 });
 
+// const notifyUsers = (partyId) => {
+//     for(const partyId in parties){
+//         for(const userId in parties[partyId].users){
+//             const res = {
+//                 methodCode : UPDATE_STATE,
+//                 users: Object.keys(parties[partyId].users),
+//                 mediaPlayer: parties[partyId].mediaPlayer,
+//             }
+//             parties[partyId].users[userId].connection.send(JSON.stringify(res));
+//         }
+//     }
+    
+// }
 
-const createParty = (req, connection) => {
-
-    const res = utitliy.creatationResponse();
-
-    if(!utitliy.validateMediaInput(req.client.media, utitliy.CREATE_PARTY, res.partyId)){
-        return {
-            method: utitliy.CREATE_PARTY,
-            status: utitliy.INVALID_MEDIA,
-            message: "Invalid Media"
+const notifyUsers = (partyId) => {
+    for(const userId in parties[partyId].users){
+        const res = {
+            methodCode : UPDATE_STATE,
+            users: Object.keys(parties[partyId].users),
+            mediaPlayer: parties[partyId].mediaPlayer,
         }
-    }
-
-    
-    req.client['connection'] = connection;
-
-
-    const client = {
-        clientId: req.client.clientId,
-        connection: connection
+        parties[partyId].users[userId].connection.send(JSON.stringify(res));
     }
     
-    partiesDB.addParty(res.partyId);
-    partiesDB.addClient(res.partyId, client);
-    partiesDB.addMedia(res.partyId, req.client.media);
-
-    return res;
-}
-
-
-const joinParty = (req, connection) => {
-
-    const res = utitliy.joinResponse;
-
-    if(!utitliy.validatePartyCode(req.party.partyId)){
-        res.status = utitliy.INVALID_CODE;
-        res.message = "Invalid Code";
-
-        return res;
-    }
-
-    if(!utitliy.validateMediaInput(req.client.media, utitliy.JOIN_PARTY, req.party.partyId)){
-        res.status = utitliy.INVALID_MEDIA;
-        res.message = "Invalid Media";
-
-        return res;
-    }
-    
-
-    req.client['connection'] = connection;
-    partiesDB.addClient(req.party.partyId ,req.client);
-
-    notifyClients();
-
-    return res;
-
-}
-
-
-const notifyClients = () => {
-
-    for(const party in partiesDB.parties){
-        for(const client in partiesDB.parties[party].clients){
-            console.log(partiesDB.parties[party])
-
-            // const updatedParty = JSON.parse(CircularJSON.stringify(partiesDB.parties[party]))
-            const updatedParty = partiesDB.parties[party]
-            
-            const res = {
-                method : UPDATE_DATA,
-                // clients: updatedParty.clients,
-                mediaPlayer: updatedParty.mediaPlayer,
-            }
-            partiesDB.parties[party].clients[client].connection.send(JSON.stringify(res))
-        }
-    }
-    setTimeout(notifyClients, 500)
 }

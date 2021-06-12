@@ -1,5 +1,5 @@
 const {joinParty} = require('../src/server/operations');
-const {JOIN_PARTY, joinResponse, joinPartyFailed} = require('../src/server/utility');
+const {JOIN_PARTY, joinResponse, joinPartyFailed} = require('../src/server/utilities/utility');
 const partiesDB = require('../src/server/partiesDB');
 
 

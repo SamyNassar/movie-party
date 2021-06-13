@@ -9,11 +9,10 @@ const connectionUtl = require('./utilities/connect-server-utl');
 const {CREATE_PARTY} = require('./utilities/create-party-utl');
 const {JOIN_PARTY, JOIN_PASSED} = require('./utilities/join-party-utl');
 const {UPDATE_STATE} = require('./utilities/update-state-utl');
-
-const {createParty, joinParty, updateMediaPlayerState} = require('./operations');
+const CLOSE_CONNECTION = 4;
+const {createParty, joinParty, updateMediaPlayerState, closeConnection} = require('./operations');
 const {parties} = require('./partiesDB')
 
-// const CircularJSON = require('circular-json');
 
 const PORT = process.env.PORT || 8080;
 
@@ -38,7 +37,9 @@ wsServer.on('request', request => {
     const connection = request.accept(null, request.origin);
 
     connection.on("open", () => console.log("OPEND!!"));
-    connection.on("close", () => console.log("CONNECTION CLOSED!!"));
+    connection.on("close", (req) => {
+        
+    });
     
     connection.on("message", message => {
         // Message From Client.
@@ -52,7 +53,6 @@ wsServer.on('request', request => {
             switch(req.methodCode){
                 case CREATE_PARTY:
                     const creatingRes = createParty(req.data, connection);
-                    console.log(creatingRes);
                     connection.send(JSON.stringify(creatingRes));
                     break;
     
@@ -83,7 +83,13 @@ wsServer.on('request', request => {
                         } catch(e){
                             console.log("ERROR", e)
                         }  
-                    }  
+                    } 
+                case CLOSE_CONNECTION:
+                    partyId = req.data.partyId;
+                    userId = req.data.userId;
+                    if(partyId != null){
+                        closeConnection(partyId, userId)
+                    }
             }
         } catch(e){
             console.log(e)
@@ -95,19 +101,6 @@ wsServer.on('request', request => {
     connection.send(JSON.stringify(connectionUtl.passedServerConnection()));
 });
 
-// const notifyUsers = (partyId) => {
-//     for(const partyId in parties){
-//         for(const userId in parties[partyId].users){
-//             const res = {
-//                 methodCode : UPDATE_STATE,
-//                 users: Object.keys(parties[partyId].users),
-//                 mediaPlayer: parties[partyId].mediaPlayer,
-//             }
-//             parties[partyId].users[userId].connection.send(JSON.stringify(res));
-//         }
-//     }
-    
-// }
 
 const notifyUsers = (partyId) => {
     for(const userId in parties[partyId].users){

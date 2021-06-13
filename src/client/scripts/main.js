@@ -9,6 +9,8 @@ const mediaPlayer = document.getElementById("myVideo");
 
 const HOST = location.origin.replace(/^http/, 'ws')
 
+const CLOSE_CONNECTION = 4;
+
 
 let clientInfo = null;
 
@@ -119,10 +121,20 @@ joinButton.addEventListener("click", () => {
 })
 
 
-ws.onclose = (event) => {
-  console.log("WebSocket is closed now.");
-  //TODO: Remove this client from party.
+window.onbeforeunload = (e) => {
+  const req = {
+    methodCode: CLOSE_CONNECTION,
+    data:{
+      userId: clientInfo.user.id,
+      partyId: clientInfo.party.id
+    }
+  }
+  
+  ws.send(JSON.stringify(req));
+
+  return null;
 };
+
 
 const displayCode = (code) => {
   partyCode.innerHTML = `${code}`;

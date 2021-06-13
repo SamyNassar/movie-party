@@ -30,10 +30,13 @@ const deleteParty = (id) => {
 const addClient = (partyId, user) => {
     parties[partyId].users[user.id] = {connection :user.connection};
     parties[partyId].numOfPartecipants += 1;
+    return parties[partyId].numOfPartecipants;
 }
 
 const deleteClient = (partyId, userId) => {
     delete parties[partyId].users[userId];
+    parties[partyId].numOfPartecipants -= 1;
+    return parties[partyId].numOfPartecipants;
 }
 
 const addMedia = (partyId, media) => {
